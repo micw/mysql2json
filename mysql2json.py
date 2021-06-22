@@ -5,6 +5,7 @@ import mysql.connector
 import json
 import http.server as SimpleHTTPServer
 import socketserver as SocketServer
+import urllib
 
 def getenv(name, default_value=None):
     ret=os.getenv(name, default_value)
@@ -42,13 +43,33 @@ def execute_query():
 
 class HttpHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 
+    access_token = None
+
+    def __init__(self, request, client_address, server):
+        self.access_token = os.getenv("ACCESS_TOKEN")
+        SimpleHTTPServer.SimpleHTTPRequestHandler.__init__(self, request, client_address, server)
+
+    def get_access_token(self):
+        parsed_path = urllib.parse.urlsplit(self.path)
+        query = dict(urllib.parse.parse_qsl(parsed_path.query))
+        return query.get("access_token")
+
     def do_GET(self):
+        if (self.access_token is not None) and (self.access_token!=self.get_access_token()):
+            self.send_response(401)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            self.wfile.write(json.dumps({
+                "status": "Forbidden",
+                "message": "A valid access token is required"
+            }).encode())
+            return
+
         result=json.dumps(execute_query())
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
         self.wfile.write(result.encode())
-        pass
 
 def main():
     execute_query()
@@ -59,7 +80,6 @@ def main():
             httpd.serve_forever()
         except KeyboardInterrupt:
             print("stopping server")
-            pass
         finally:
             httpd.server_close()
 
