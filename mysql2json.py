@@ -34,10 +34,10 @@ def execute_query():
         cols=rs.column_names
         results=[]
         for row in rs:
+            result={}
             for i,col in enumerate(row):
-                results.append({
-                    cols[i]:col
-                })
+                result[cols[i]]=col
+            results.append(result)
 
         return results
 
