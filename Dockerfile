@@ -1,7 +1,7 @@
 FROM alpine:3.14
 
 RUN apk add --update --no-cache python3 py3-pip && \
-    pip install mysql-connector
+    pip install mysql-connector-python
 
 ADD mysql2json.py /mysql2json.py
 
